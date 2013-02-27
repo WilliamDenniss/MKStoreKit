@@ -67,6 +67,9 @@
 //returns a dictionary with all prices for identifiers
 - (NSMutableDictionary *)pricesDictionary;
 - (NSMutableArray*) purchasableObjectsDescription;
+- (NSDate*) getSubscriptionExpiresDate:(NSString*)featuredId;
+
++(NSData*) dataForKey:(NSString*) key;
 
 // use this method to start a purchase
 - (void) buyFeature:(NSString*) featureId
@@ -90,5 +93,6 @@
 +(id) receiptForKey:(NSString*) key;
 +(void) setObject:(id) object forKey:(NSString*) key;
 +(NSNumber*) numberForKey:(NSString*) key;
++(NSDictionary*) storeKitItems;
 
 @end

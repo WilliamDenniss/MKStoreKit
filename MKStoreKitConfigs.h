@@ -53,7 +53,6 @@
     #define REVIEW_ALLOWED 0
 #endif
 
-#warning Shared Secret Missing Ignore this warning if you don't use auto-renewable subscriptions
 #ifndef kSharedSecret
-    #define kSharedSecret @"<FILL IN YOUR SHARED SECRET HERE>"
+    #define kSharedSecret @"ae86678ef98c4b5c83c31f3991bbc933"
 #endif

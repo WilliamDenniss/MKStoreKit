@@ -327,29 +327,50 @@ static MKStoreManager* _sharedStoreManager;
   return [[MKStoreManager numberForKey:featureId] boolValue];
 }
 
-- (BOOL) isSubscriptionActive:(NSString*) featureId
+//PD Additions
+- (NSDate*) getSubscriptionExpiresDate:(NSString*)featuredId
 {
-  MKSKSubscriptionProduct *subscriptionProduct = [self.subscriptionProducts objectForKey:featureId];
-  if(!subscriptionProduct.receipt) return NO;
-  
-  id jsonObject = [NSJSONSerialization JSONObjectWithData:subscriptionProduct.receipt options:NSJSONReadingAllowFragments error:nil];
-  NSData *receiptData = [NSData dataFromBase64String:[jsonObject objectForKey:@"latest_receipt"]];
-  
-  NSPropertyListFormat plistFormat;
-  NSDictionary *payloadDict = [NSPropertyListSerialization propertyListWithData:receiptData
-                                                                        options:NSPropertyListImmutable
-                                                                         format:&plistFormat
-                                                                          error:nil];
-  
-  receiptData = [NSData dataFromBase64String:[payloadDict objectForKey:@"purchase-info"]];
-  
-  NSDictionary *receiptDict = [NSPropertyListSerialization propertyListWithData:receiptData
-                                                                        options:NSPropertyListImmutable
-                                                                         format:&plistFormat
-                                                                          error:nil];
-  
-  NSTimeInterval expiresDate = [[receiptDict objectForKey:@"expires-date"] doubleValue]/1000.0f;
-  return expiresDate > [[NSDate date] timeIntervalSince1970];
+    NSTimeInterval expiresTimestamp = [self getSubscriptionExpiresTimestamp:featuredId];
+    if (expiresTimestamp == -1)
+    {
+        return nil;
+    }
+    else
+    {
+        return [NSDate dateWithTimeIntervalSince1970:expiresTimestamp];
+    }
+}
+
+- (NSTimeInterval) getSubscriptionExpiresTimestamp:(NSString*)featureId
+{
+    MKSKSubscriptionProduct *subscriptionProduct = [self.subscriptionProducts objectForKey:featureId];
+    if(!subscriptionProduct.receipt) return -1;
+    
+    id jsonObject = [NSJSONSerialization JSONObjectWithData:subscriptionProduct.receipt options:NSJSONReadingAllowFragments error:nil];
+    NSData *receiptData = [NSData dataFromBase64String:[jsonObject objectForKey:@"latest_receipt"]];
+    
+    NSPropertyListFormat plistFormat;
+    NSDictionary *payloadDict = [NSPropertyListSerialization propertyListWithData:receiptData
+                                                                          options:NSPropertyListImmutable
+                                                                           format:&plistFormat
+                                                                            error:nil];
+    
+    receiptData = [NSData dataFromBase64String:[payloadDict objectForKey:@"purchase-info"]];
+    
+    NSDictionary *receiptDict = [NSPropertyListSerialization propertyListWithData:receiptData
+                                                                          options:NSPropertyListImmutable
+                                                                           format:&plistFormat
+                                                                            error:nil];
+    
+    NSTimeInterval expiresDate = [[receiptDict objectForKey:@"expires-date"] doubleValue]/1000.0f;
+    return expiresDate;
+}
+//
+
+- (BOOL) isSubscriptionActive:(NSString*)featureId
+{
+    NSTimeInterval expiresDate = [self getSubscriptionExpiresTimestamp:featureId];
+    return expiresDate > [[NSDate date] timeIntervalSince1970];
 }
 
 // Call this function to populate your UI
@@ -517,7 +538,11 @@ static MKStoreManager* _sharedStoreManager;
   self.subscriptionProducts = [NSMutableDictionary dictionary];
   for(NSString *productId in [subscriptions allKeys])
   {
-    MKSKSubscriptionProduct *product = [[MKSKSubscriptionProduct alloc] initWithProductId:productId subscriptionDays:[[subscriptions objectForKey:productId] intValue]];
+      // PD Edit: made this more consistent with the consumables.. count is just the number of months
+      int subscriptionDays = [[[subscriptions objectForKey:productId] objectForKey:@"Count"] intValue] * 30;
+    MKSKSubscriptionProduct *product = [[MKSKSubscriptionProduct alloc] initWithProductId:productId subscriptionDays:subscriptionDays];
+    [self.subscriptionProducts setObject:product forKey:productId];
+
     product.receipt = [MKStoreManager dataForKey:productId]; // cached receipt
     
     if(product.receipt)
