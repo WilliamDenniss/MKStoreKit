@@ -82,16 +82,16 @@
 -(BOOL) isSubscriptionActive
 {    
   if(!self.receipt) return NO;
-  if([[self.verifiedReceiptDictionary objectForKey:@"receipt"] objectForKey:@"expires_date"]){
+  if([self.purchaseInfoDictionary objectForKey:@"expires-date"]){
     
-    NSTimeInterval expiresDate = [[[self.verifiedReceiptDictionary objectForKey:@"receipt"] objectForKey:@"expires_date"] doubleValue]/1000.0;        
+    NSTimeInterval expiresDate = [[self.purchaseInfoDictionary objectForKey:@"expires-date"] doubleValue]/1000.0;        
     return expiresDate > [[NSDate date] timeIntervalSince1970];
     
 	}else{
     
-    NSString *purchasedDateString = [[self.verifiedReceiptDictionary objectForKey:@"receipt"] objectForKey:@"purchase_date"];        
+    NSString *purchasedDateString = [self.purchaseInfoDictionary objectForKey:@"purchase-date"];        
     if(!purchasedDateString) {
-      NSLog(@"Receipt Dictionary from Apple Server is invalid: %@", self.verifiedReceiptDictionary);
+      NSLog(@"Receipt Dictionary from Apple Server is invalid: %@", self.purchaseInfoDictionary);
       return NO;
     }
     NSDateFormatter *df = [[NSDateFormatter alloc] init];
@@ -123,9 +123,20 @@ didReceiveResponse:(NSURLResponse *)response
 	[self.dataFromConnection appendData:data];
 }
 
--(NSDictionary*) verifiedReceiptDictionary {
+-(NSDictionary*) purchaseInfoDictionary {
   
-  return [NSJSONSerialization JSONObjectWithData:self.receipt options:NSJSONReadingAllowFragments error:nil];
+    NSPropertyListFormat plistFormat;
+    NSDictionary *payloadDict = [NSPropertyListSerialization propertyListWithData:self.receipt
+                                                                          options:NSPropertyListImmutable
+                                                                           format:&plistFormat
+                                                                            error:nil];
+    
+    NSData* purchaseInfo = [NSData dataFromBase64String:[payloadDict objectForKey:@"purchase-info"]];
+    NSDictionary *purchaseInfoDict = [NSPropertyListSerialization propertyListWithData:purchaseInfo
+                                                                          options:NSPropertyListImmutable
+                                                                           format:&plistFormat
+                                                                            error:nil];
+    return purchaseInfoDict;
 }
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection
@@ -133,6 +144,7 @@ didReceiveResponse:(NSURLResponse *)response
     NSData* connectionData = [self.dataFromConnection copy];
     id jsonObject = [NSJSONSerialization JSONObjectWithData:connectionData options:NSJSONReadingAllowFragments error:nil];
     NSData *receiptData = [NSData dataFromBase64String:[jsonObject objectForKey:@"latest_receipt"]];
+    DLog(@"receipt data: %@", [receiptData base64EncodedString]);
     [MKStoreManager setObject:receiptData forKey:self.productId];       // update stored receipt.
   self.receipt = receiptData;
   if(self.onSubscriptionVerificationCompleted)
