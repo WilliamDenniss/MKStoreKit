@@ -346,8 +346,10 @@ static MKStoreManager* _sharedStoreManager;
     MKSKSubscriptionProduct *subscriptionProduct = [self.subscriptionProducts objectForKey:featureId];
     if(!subscriptionProduct.receipt) return -1;
     
-    id jsonObject = [NSJSONSerialization JSONObjectWithData:subscriptionProduct.receipt options:NSJSONReadingAllowFragments error:nil];
-    NSData *receiptData = [NSData dataFromBase64String:[jsonObject objectForKey:@"latest_receipt"]];
+//    id jsonObject = [NSJSONSerialization JSONObjectWithData:subscriptionProduct.receipt options:NSJSONReadingAllowFragments error:nil];
+//    NSData *receiptData = [NSData dataFromBase64String:[jsonObject objectForKey:@"latest_receipt"]];
+    
+    NSData* receiptData = subscriptionProduct.receipt;
     
     NSPropertyListFormat plistFormat;
     NSDictionary *payloadDict = [NSPropertyListSerialization propertyListWithData:receiptData

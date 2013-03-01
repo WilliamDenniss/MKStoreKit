@@ -130,7 +130,11 @@ didReceiveResponse:(NSURLResponse *)response
 
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection
 {
-  self.receipt = [self.dataFromConnection copy];
+    NSData* connectionData = [self.dataFromConnection copy];
+    id jsonObject = [NSJSONSerialization JSONObjectWithData:connectionData options:NSJSONReadingAllowFragments error:nil];
+    NSData *receiptData = [NSData dataFromBase64String:[jsonObject objectForKey:@"latest_receipt"]];
+    [MKStoreManager setObject:receiptData forKey:self.productId];       // update stored receipt.
+  self.receipt = receiptData;
   if(self.onSubscriptionVerificationCompleted)
   {
     self.onSubscriptionVerificationCompleted([NSNumber numberWithBool:[self isSubscriptionActive]]);
