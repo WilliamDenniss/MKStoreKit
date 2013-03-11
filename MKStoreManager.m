@@ -564,6 +564,8 @@ static MKStoreManager* _sharedStoreManager;
          else
          {
            NSLog(@"Subscription: %@ is active", product.productId);
+        [[NSNotificationCenter defaultCenter] postNotificationName:kSubscriptionsPurchasedNotification
+                                                                 object:product.productId];
          }
        }
                                onError:^(NSError* error)
