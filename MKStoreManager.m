@@ -273,7 +273,7 @@ static MKStoreManager* _sharedStoreManager;
     return [consumableNames allObjects];
 }
 
-- (BOOL) removeAllKeychainData {
++ (BOOL) removeAllKeychainData {
   
   NSMutableArray *productsArray = [MKStoreManager allProducts];
   int itemCount = productsArray.count;
@@ -282,6 +282,7 @@ static MKStoreManager* _sharedStoreManager;
   //loop through all the saved keychain data and remove it
   for (int i = 0; i < itemCount; i++ ) {
     [SFHFKeychainUtils deleteItemForUsername:[productsArray objectAtIndex:i] andServiceName:@"MKStoreKit" error:&error];
+      [SFHFKeychainUtils deleteItemForUsername:[NSString stringWithFormat:@"%@-receipt", [productsArray objectAtIndex:i]] andServiceName:@"MKStoreKit" error:&error];
   }
   if (!error) {
     return YES;
